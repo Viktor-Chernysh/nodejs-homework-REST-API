@@ -30,10 +30,6 @@ const removeContact = async (contactId) => {
 
 const addContact = async ({ name, email, phone }) => {
   const newContact = { id: randomUUID(), name, email, phone };
-  if (name === undefined || email === undefined || phone === undefined) {
-    console.log("no contact");
-    return null;
-  }
   contacts.push(newContact);
   await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
   return newContact;
