@@ -2,8 +2,9 @@ import express from "express";
 import logger from "morgan";
 import cors from "cors";
 
-import router from "./routes/api/contacts";
-import { HttpCode } from "./lib/contacts";
+import contactsRouter from "./routes/api/contacts";
+import authRouter from "./routes/api/auth";
+import { HttpCode } from "./lib/constant";
 
 const app = express();
 
@@ -13,7 +14,8 @@ app.use(logger(formatsLogger));
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/contacts", router);
+app.use("/api/auth", authRouter);
+app.use("/api/contacts", contactsRouter);
 
 app.use((req, res) => {
   res.status(HttpCode.NOT_FOUND).json({

@@ -1,15 +1,15 @@
 import Contact from "../model/contact";
 
-const contactsList = async ({
-  sortBy,
-  sortByDesc,
-  filter,
-  limit = 10,
-  skip = 0,
-}) => {
+const contactsList = async (
+  userId,
+  { sortBy, sortByDesc, filter, limit = 10, skip = 0 }
+) => {
   let sortCriteria = null;
-  const total = await Contact.find().countDocuments();
-  let contacts = Contact.find();
+  const total = await Contact.find({ owner: userId }).countDocuments();
+  let contacts = Contact.find({ owner: userId }).populate({
+    path: "owner",
+    select: "name email role",
+  });
   if (sortBy) {
     sortCriteria = { [`${sortBy}`]: 1 };
   }
@@ -26,24 +26,33 @@ const contactsList = async ({
   return { total, contacts };
 };
 
-const getContactById = async (contactId) => {
-  const contact = await Contact.findById(contactId);
+const getContactById = async (userId, contactId) => {
+  const contact = await Contact.findOne({
+    _id: contactId,
+    owner: userId,
+  }).populate({
+    path: "owner",
+    select: "name email role",
+  });
   return contact;
 };
 
-const removeContact = async (contactId) => {
-  const contact = await Contact.findByIdAndRemove(contactId);
+const removeContact = async (userId, contactId) => {
+  const contact = await Contact.findOneAndRemove({
+    _id: contactId,
+    owner: userId,
+  });
   return contact;
 };
 
-const addContact = async (body) => {
-  const contact = await Contact.create(body);
+const addContact = async (userId, body) => {
+  const contact = await Contact.create({ ...body, owner: userId });
   return contact;
 };
 
-const updateContact = async (contactId, body) => {
-  const contact = await Contact.findByIdAndUpdate(
-    contactId,
+const updateContact = async (userId, contactId, body) => {
+  const contact = await Contact.findOneAndUpdate(
+    { _id: contactId, owner: userId },
     { ...body },
     { new: true }
   );
