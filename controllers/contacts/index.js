@@ -1,8 +1,9 @@
 import repositoryContacts from "../../repository/contacts";
-import { HttpCode } from "../../lib/contacts";
+import { HttpCode } from "../../lib/constant";
 
 const getContacts = async (req, res, next) => {
-  const contacts = await repositoryContacts.contactsList(req.query);
+  const { id: userId } = req.user;
+  const contacts = await repositoryContacts.contactsList(userId, req.query);
   if (!contacts) {
     res.status(HttpCode.NOT_FOUND).json({
       status: "error",
@@ -17,7 +18,8 @@ const getContacts = async (req, res, next) => {
 
 const getContactById = async (req, res, next) => {
   const { id } = req.params;
-  const contact = await repositoryContacts.getContactById(id);
+  const { id: userId } = req.user;
+  const contact = await repositoryContacts.getContactById(userId, id);
   if (!contact) {
     res.status(HttpCode.NOT_FOUND).json({
       status: "error",
@@ -31,7 +33,8 @@ const getContactById = async (req, res, next) => {
 };
 
 const createContact = async (req, res, next) => {
-  const newContact = await repositoryContacts.addContact(req.body);
+  const { id: userId } = req.user;
+  const newContact = await repositoryContacts.addContact(userId, req.body);
   if (newContact === null) {
     return res.status(HttpCode.BAD_REQUEST).json({
       status: "error",
@@ -48,7 +51,8 @@ const createContact = async (req, res, next) => {
 
 const removeContact = async (req, res, next) => {
   const { id } = req.params;
-  const contacts = await repositoryContacts.removeContact(id);
+  const { id: userId } = req.user;
+  const contacts = await repositoryContacts.removeContact(userId, id);
   if (contacts === null) {
     return res.status(HttpCode.NOT_FOUND).json({
       status: "error",
@@ -64,7 +68,8 @@ const removeContact = async (req, res, next) => {
 
 const updateContact = async (req, res, next) => {
   const { id } = req.params;
-  const contact = await repositoryContacts.updateContact(id, req.body);
+  const { id: userId } = req.user;
+  const contact = await repositoryContacts.updateContact(userId, id, req.body);
   if (!contact) {
     return res.status(HttpCode.NOT_FOUND).json({
       status: "error",
