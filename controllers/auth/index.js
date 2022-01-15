@@ -1,5 +1,11 @@
+/* eslint-disable no-unused-vars */
 import { HttpCode } from "../../lib/constant";
 import AuthService from "../../service/auth";
+import {
+  UploadFileService,
+  CloudFileStorage,
+  LocalFileStorage,
+} from "../../service/file-storage";
 
 const authService = new AuthService();
 
@@ -50,4 +56,16 @@ const getCurrent = (req, res, next) => {
   });
 };
 
-export { registration, login, logout, getCurrent };
+const uploadAvatar = async (req, res, next) => {
+  const uploadService = new UploadFileService(
+    LocalFileStorage,
+    req.file,
+    req.user
+  );
+  const avatarUrl = await uploadService.updateAvatar();
+  res
+    .status(HttpCode.OK)
+    .json({ status: "success", code: HttpCode.OK, data: { avatarUrl } });
+};
+
+export { registration, login, logout, getCurrent, uploadAvatar };

@@ -10,8 +10,9 @@ class AuthService {
   }
 
   async create(body) {
-    const { id, name, email, role } = await UsersRepository.createNewUser(body);
-    return { id, name, email, role };
+    const { id, name, email, role, avatarURL } =
+      await UsersRepository.createNewUser(body);
+    return { id, name, email, role, avatarURL };
   }
 
   async getUser(email, password) {
