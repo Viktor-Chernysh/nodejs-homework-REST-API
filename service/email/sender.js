@@ -7,7 +7,6 @@ export class SenderSendGrid {
     return sgMail.send({
       ...message,
       from: process.env.SENDER_SENDGRID,
-      to: "viktor.chernysh.work@gmail.com",
     });
   }
 }
