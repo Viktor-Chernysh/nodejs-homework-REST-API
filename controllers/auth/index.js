@@ -6,6 +6,12 @@ import {
   CloudFileStorage,
   LocalFileStorage,
 } from "../../service/file-storage";
+import {
+  SenderNodemailer,
+  SenderSendGrid,
+  EmailService,
+} from "../../service/email";
+import repositoryUsers from "../../repository/user";
 
 const registration = async (req, res, next) => {
   try {
@@ -18,10 +24,24 @@ const registration = async (req, res, next) => {
         message: "Email is already exist",
       });
     }
-    const data = await authService.create(req.body);
-    res
-      .status(HttpCode.CREATED)
-      .json({ status: "success", code: HttpCode.CREATED, data });
+    const userData = await authService.create(req.body);
+    const emailService = new EmailService(
+      process.env.NODE_ENV,
+      new SenderSendGrid()
+    );
+
+    const isMessageSend = await emailService.sendVerifyEmail(
+      email,
+      userData.name,
+      userData.verificationToken
+    );
+    delete userData.verificationToken;
+
+    res.status(HttpCode.CREATED).json({
+      status: "success",
+      code: HttpCode.CREATED,
+      data: { ...userData, verificationEmailSend: isMessageSend },
+    });
   } catch (error) {
     next(error);
   }
@@ -72,4 +92,65 @@ const uploadAvatar = async (req, res, next) => {
     .json({ status: "success", code: HttpCode.OK, data: { avatarUrl } });
 };
 
-export { registration, login, logout, getCurrent, uploadAvatar };
+const verifyUser = async (req, res, next) => {
+  const verifyToken = req.params.verificationToken;
+  const getUserFromToken = await repositoryUsers.findByVerifyToken(verifyToken);
+  if (getUserFromToken) {
+    await repositoryUsers.updateVerification(getUserFromToken.id, true);
+    return res.status(HttpCode.OK).json({
+      status: "success",
+      code: HttpCode.OK,
+      data: { message: "Success" },
+    });
+  }
+  res.status(HttpCode.BAD_REQUEST).json({
+    status: "bad request",
+    code: HttpCode.BAD_REQUEST,
+    data: { message: "Invalid token" },
+  });
+};
+
+const repeatEmailForVerifyUser = async (req, res, next) => {
+  const { email } = req.body;
+  const user = await repositoryUsers.findByEmail(email);
+  if (user) {
+    const { name, verificationToken } = user;
+    const emailService = new EmailService(
+      process.env.NODE_ENV,
+      new SenderNodemailer()
+    );
+
+    const isMessageSend = await emailService.sendVerifyEmail(
+      email,
+      name,
+      verificationToken
+    );
+    if (isMessageSend) {
+      return res.status(HttpCode.OK).json({
+        status: "success",
+        code: HttpCode.OK,
+        data: { message: "Verification email sent" },
+      });
+    }
+    return res.status(HttpCode.SE).json({
+      status: "error",
+      code: HttpCode.SE,
+      data: { message: "Service Unavailable" },
+    });
+  }
+  res.status(HttpCode.NOT_FOUND).json({
+    status: "error",
+    code: HttpCode.NOT_FOUND,
+    data: { message: "User with this email not found " },
+  });
+};
+
+export {
+  registration,
+  login,
+  logout,
+  getCurrent,
+  uploadAvatar,
+  repeatEmailForVerifyUser,
+  verifyUser,
+};
